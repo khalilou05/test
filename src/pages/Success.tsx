@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { HiCheckCircle, HiOutlineMail, HiExclamationCircle } from 'react-icons/hi';
+import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../store';
-import { resetCheckoutState } from '../store/checkoutSlice';
-import { removeItemsById, clearCart, CartItem } from '../store/cartSlice';
-import { FaEnvelope, FaDownload } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../store';
+import { removeItemsById, clearCart } from '../store/cartSlice';
+import { FaDownload } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 // Interface pour typer la session Stripe récupérée (partielle)
@@ -46,15 +45,6 @@ interface PaidItemInfo {
     name?: string; // Nom du produit si disponible
     downloaded: boolean; // Pour griser le bouton après clic
 }
-
-// Ajouter PAPER_SIZES ici ou l'importer
-// Idéalement, partager cette définition entre frontend et backend
-const PAPER_SIZES = [
-  { id: 'A4', name: 'A4', dimensions: '21 x 29.7 cm', renderWidth: 850.32, renderHeight: 1202.48 },
-  { id: 'A3', name: 'A3', dimensions: '29.7 x 42 cm', renderWidth: 1202.48, renderHeight: 1697.84 },
-  { id: '70x100', name: '70x100 cm', dimensions: '70 x 100 cm', renderWidth: 2645.67, renderHeight: 3779.53 }, // Exemple
-  // ... autres tailles
-];
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 

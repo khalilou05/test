@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { useNavigate } from 'react-router-dom';
@@ -6,18 +6,8 @@ import { startPaymentProcessing, paymentFailure, resetCheckoutState } from '../s
 import Spinner from '../components/Spinner';
 import { PAPER_FINISHES, PAPER_WEIGHTS, FRAME_COLORS } from '../store/productSlice';
 import { CartItem } from '../store/cartSlice';
-import { LAYOUT_TEMPLATES } from '../store/layoutSlice';
 import { MAP_STYLE_OPTIONS } from '../store/mapSlice';
 import { useTranslation } from 'react-i18next';
-
-// Add style override for checkout item titles
-const checkoutStyles = `
-  .force-align-left p,
-  .force-align-left div,
-  .force-align-left span {
-    text-align: left !important;
-  }
-`;
 
 // Fonction simple pour supprimer les balises HTML (avec type)
 const stripHtml = (html: string | null | undefined): string => {
@@ -74,7 +64,7 @@ const Checkout = () => {
     dispatch(startPaymentProcessing());
 
     const lineItems = cartItems.map((item, index) => {
-      const plainTextTitle = stripHtml(item.posterConfiguration.labels.title.text || 'Affiche personnalisée');
+      const plainTextTitle = stripHtml(item.posterConfiguration.labels.title.text || t('cart.custom_poster'));
       // Créer le nom préfixé et le mettre en majuscules
       const prefixedTitle = `Poster ${index + 1}: ${plainTextTitle}`.toUpperCase();
 

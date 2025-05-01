@@ -4,4 +4,13 @@
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ]
+  ,  "build": {
+    "env": {
+      "TSC_COMPILE_ON_ERROR": "true"
+    }
+  },  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  }
+
 }

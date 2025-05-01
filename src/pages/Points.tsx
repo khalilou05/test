@@ -43,7 +43,6 @@ const Points: React.FC<PointsProps> = ({ mapEditorRef }) => {
   );
   const activities = useSelector((state: RootState) => state.activities.activities);
   const activeActivityIds = useSelector((state: RootState) => state.activities.activeActivityIds);
-  const [selectAll, setSelectAll] = useState(false);
   const [selectedAvailablePoint, setSelectedAvailablePoint] = useState<
     string | null
   >(null);
@@ -84,29 +83,13 @@ const Points: React.FC<PointsProps> = ({ mapEditorRef }) => {
     });
   }, [dispatch, activities, activeActivityIds, activities.length]); // Add activities.length here
 
-  const [availablePoints, setAvailablePoints] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Filtrer les points disponibles en fonction des activités actives
-    const deletedPointIds = allPointsFromState
-      .filter(
-        (point) =>
-          !point.isVisible && activeActivityIds.includes(point.activityId)
-      )
-      .map((point) => point.id);
-    setAvailablePoints(deletedPointIds);
-
-  }, [allPointsFromState, activeActivityIds]);
-
   const handleDeletePoint = (id: string) => {
     dispatch(setPointVisibility({ id: id, isVisible: false }));
-    setSelectAll(false);
   };
 
   const handleAddPoint = (id: string) => {
     dispatch(addPoint(id));
     dispatch(setPointVisibility({ id: id, isVisible: true }));
-    setSelectAll(false);
     setSelectedAvailablePoint(null); // Reset selected value after adding
   };
 

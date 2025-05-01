@@ -2,20 +2,17 @@ import clsx from 'clsx';
 import { Suspense } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Tooltip } from "react-tooltip";
-import { NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { NavLink, Route, Routes } from "react-router-dom";
 import {
   HiHome,
   HiUpload,
   HiTemplate,
   HiLocationMarker,
   HiTag,
-  HiViewGrid, // Layout
-  HiMap, // Map Style
-  HiAdjustments, // Trace Style (alternative icon)
-  HiChartBar, // Profile (alternative icon)
-  HiArrowsExpand, // Size
-  HiShoppingCart, // Cart
-  HiUser // Placeholder for Profile if needed later
+  HiViewGrid,
+  HiMap,
+  HiAdjustments,
+  HiChartBar
 } from "react-icons/hi";
 import { useTranslation } from 'react-i18next';
 
@@ -29,7 +26,6 @@ import Activities from "../pages/Activities.tsx";
 import Points from "../pages/Points.tsx";
 import Labels from "../pages/Labels.tsx";
 import TemplatePage from "../pages/Template.tsx";
-// --- New Pages ---
 import Layout from "../pages/Layout.tsx";
 import MapStyle from "../pages/MapStyle.tsx";
 import Trace from "../pages/Trace.tsx";
@@ -40,16 +36,14 @@ import Success from "../pages/Success.tsx";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
-  mapEditorRef: any; // Pass ref if needed by child pages (Points currently uses it)
+  mapEditorRef: any;
 }
 
 const Sidebar = ({ isSidebarOpen, mapEditorRef }: SidebarProps) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(isSidebarOpen);
-  const location = useLocation(); // To handle active state for '/' and '/overview'
   const { t } = useTranslation();
 
-  // Use effect to handle sidebar visibility for animation
   useEffect(() => {
     if (isSidebarOpen) {
       setIsVisible(true);

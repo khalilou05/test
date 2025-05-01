@@ -1,68 +1,21 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from "react-router-dom";
 import { HiUpload, HiTemplate } from "react-icons/hi";
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { addPosterToCart, CartItem } from '../store/cartSlice';
-import EditorPreview, { EditorPreviewRef } from '../components/EditorPreview';
+import { addPosterToCart } from '../store/cartSlice';
+import { EditorPreviewRef } from '../components/EditorPreview';
 import CartLoaderOverlay from '../components/CartLoaderOverlay';
-import { exportPdf } from '../utils/pdfUtils';
-import { store } from '../store';
-import { setZoomLevel } from '../store/zoomSlice';
-import { Map as MapboxMap } from 'mapbox-gl';
 import { useTranslation } from 'react-i18next';
 
 interface OverviewProps {
   editorPreviewRef: React.RefObject<EditorPreviewRef>;
 }
 
-// Helper pour générer un ID unique
-const generateCartItemId = () => `cart-${Date.now()}-${Math.random().toString(16).substring(2, 8)}`;
-
-// Helper pour attendre l'état idle (avec fallback pro)
-const waitForMapIdle = (map: MapboxMap, timeoutMs = 10000): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    let done = false;
-    const timeoutId = setTimeout(() => {
-      if (!done) {
-        done = true;
-        map.off('idle', onIdle);
-        console.warn(`Map did not become idle within the timeout period (${timeoutMs}ms). Proceeding anyway.`);
-        resolve(); // Fallback : on continue même si la carte n'est pas idle
-      }
-    }, timeoutMs);
-
-    const onIdle = () => {
-      if (!done) {
-        done = true;
-        clearTimeout(timeoutId);
-        resolve();
-      }
-    };
-    map.on('idle', onIdle);
-    setTimeout(() => map.resize(), 50);
-  });
-};
-
-// Conversion DataURL -> Blob
-function dataUrlToBlob(dataUrl: string) {
-  const arr = dataUrl.split(',');
-  const mime = arr[0].match(/:(.*?);/)![1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
-}
-
 const Overview: React.FC<OverviewProps> = ({ editorPreviewRef }) => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false); // Garder cet état
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null); // Pour suivre l'upload
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const labels = useSelector((state: RootState) => state.labels);
   const points = useSelector((state: RootState) => state.points.points);
   const layout = useSelector((state: RootState) => state.layout);
@@ -73,7 +26,6 @@ const Overview: React.FC<OverviewProps> = ({ editorPreviewRef }) => {
   const activities = useSelector((state: RootState) => state.activities);
   const currentPrice = product.currentPrice;
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const { t } = useTranslation();
 
   const handleAddToCart = async () => {
@@ -116,7 +68,7 @@ const Overview: React.FC<OverviewProps> = ({ editorPreviewRef }) => {
   return (
     <div className="space-y-8 max-w-full min-h-full">
       {/* Overlay loader */}
-      {isAddingToCart && <CartLoaderOverlay message={isGeneratingPreview ? t('overview.generating_preview') : uploadProgress !== null ? t('overview.upload_pdf', { progress: uploadProgress }) : t('overview.adding_to_cart')} />}
+      {isAddingToCart && <CartLoaderOverlay message={t('overview.adding_to_cart')} />}
       <div className="space-y-1 ">
         <div className="font-sans font-bold text-white">{t('overview.title')}</div>
         <div className="mt-1 text-gray-400 font-light text-sm">
@@ -252,11 +204,7 @@ const Overview: React.FC<OverviewProps> = ({ editorPreviewRef }) => {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            {isGeneratingPreview 
-              ? <span>{t('overview.generating_preview')}</span>
-              : uploadProgress !== null 
-                ? <span>{t('overview.upload_pdf', { progress: uploadProgress })}</span>
-                : <span>{t('overview.adding_to_cart')}</span>}
+            <span>{t('overview.adding_to_cart')}</span>
           </>
         ) : (
           <>

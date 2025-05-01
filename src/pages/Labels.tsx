@@ -2,7 +2,6 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
@@ -39,15 +38,13 @@ import {
   FaAlignLeft,
   FaAlignCenter,
   FaAlignRight,
-  FaFont,
+  FaTextHeight,
   FaArrowUp,
   FaArrowDown,
-  FaTextHeight,
 } from "react-icons/fa";
 import {
   ChevronDownIcon,
   MinusIcon,
-  CheckIcon,
 } from "@heroicons/react/20/solid";
 
 // Tooltip Import
@@ -470,8 +467,6 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
     );
   const currentWeightName =
     t(`labels.weight_${AVAILABLE_FONT_WEIGHTS.find((fw) => fw.value === style.fontWeight)?.name || 'normal'}`);
-  const currentFontLabel =
-    AVAILABLE_FONTS.find((f) => f.value === style.fontFamily)?.label || "Police";
 
   // ** CORRECTION: Tooltip application: Only on the final interactive element **
   return (
@@ -865,9 +860,6 @@ interface StatRowContentProps {
   ) => void;
   handleSaveChanges: (index: number) => void; // Déclenche la sauvegarde Redux depuis localStats
   handleRemoveStat: (index: number) => void;
-  activeColorPickerIndex: number | null;
-  toggleColorPicker: (index: number) => void;
-  colorPickerRef: React.RefObject<HTMLDivElement | null>;
   debounceStyleUpdate: (
     index: number,
     changedUpdates: Partial<StatItem["style"]>
@@ -883,9 +875,6 @@ const StatRowContent = React.memo<StatRowContentProps>(
     handleLocalStyleChange,
     handleSaveChanges,
     handleRemoveStat,
-    activeColorPickerIndex,
-    toggleColorPicker,
-    colorPickerRef,
     debounceStyleUpdate,
   }) => {
     // PAS besoin d'états locaux ici pour label/value
@@ -1104,11 +1093,6 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
   );
   // Ref for debounce timer
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // State to track which color picker is open
-  const [activeColorPickerIndex, setActiveColorPickerIndex] = useState<
-    number | null
-  >(null);
-  const colorPickerRef = useRef<HTMLDivElement | null>(null); // Ref for the picker container
 
   // Effect to sync localStats when Redux stats change
   useEffect(() => {
@@ -1116,36 +1100,6 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
       stats.map((stat) => ({ ...stat, style: { ...(stat.style || {}) } }))
     );
   }, [stats]);
-
-  // Effect to handle clicks outside the color picker
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Check if the click is outside the color picker container div
-      if (
-        colorPickerRef.current &&
-        !colorPickerRef.current.contains(event.target as Node)
-      ) {
-        // Also check if the click target was the button that opens the picker for the *current* index
-        // This prevents the picker closing immediately when clicking the button to open it
-        const clickedButton = (event.target as Element).closest(
-          `button[aria-label="Couleur stat."][data-index="${activeColorPickerIndex}"]`
-        );
-        if (!clickedButton) {
-          setActiveColorPickerIndex(null); // Close picker if click is outside and not on the triggering button
-        }
-      }
-    };
-
-    if (activeColorPickerIndex !== null) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeColorPickerIndex]); // Re-run when picker opens/closes
 
   // --- Handlers for Local State Updates (passed to memoized component) ---
   const handleLocalLabelChange = useCallback((index: number, value: string) => {
@@ -1260,21 +1214,10 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
   // --- Handler for Removing Stat ---
   const handleRemoveStat = useCallback(
     (index: number) => {
-      // Close color picker if it was for the removed stat
-      if (activeColorPickerIndex === index) {
-        setActiveColorPickerIndex(null);
-      }
       dispatch(removeStat(index));
     },
-    [dispatch, activeColorPickerIndex]
+    [dispatch]
   );
-
-  // --- Handler to toggle color picker ---
-  const toggleColorPicker = useCallback((index: number) => {
-    setActiveColorPickerIndex((currentIndex) =>
-      currentIndex === index ? null : index
-    );
-  }, []); // Added dependency array for useCallback
 
   // --- DND Handlers (ensure localStats dependency is correct) ---
   const sensors = useSensors(
@@ -1424,9 +1367,6 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
                     handleLocalStyleChange={handleLocalStyleChange}
                     handleSaveChanges={handleSaveChanges}
                     handleRemoveStat={handleRemoveStat}
-                    activeColorPickerIndex={activeColorPickerIndex}
-                    toggleColorPicker={toggleColorPicker}
-                    colorPickerRef={colorPickerRef}
                     debounceStyleUpdate={debounceStyleUpdate}
                   />
                 </SortableItem>

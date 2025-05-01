@@ -2,10 +2,9 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { removeFromCart } from '../store/cartSlice';
-import { HiTrash, HiMinus, HiPlus, HiOutlineShoppingBag } from 'react-icons/hi';
+import { HiTrash, HiOutlineShoppingBag } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { PAPER_FINISHES, PAPER_WEIGHTS, FRAME_COLORS } from '../store/productSlice';
-import { LAYOUT_TEMPLATES } from '../store/layoutSlice';
 import { MAP_STYLE_OPTIONS } from '../store/mapSlice';
 import { CartItem } from '../store/cartSlice';
 import { useTranslation } from 'react-i18next';
@@ -15,18 +14,16 @@ const Cart = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const isOverlayVisible = useSelector((state: RootState) => state.overlay.isVisible);
 
   const getTotalPrice = () => {
     return cartItems.reduce((total, item) => total + item.posterConfiguration.product.price, 0);
   };
 
-   const formatPrice = (price: number) => {
+  const formatPrice = (price: number) => {
     return price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
   };
 
   const getItemDetails = (config: CartItem['posterConfiguration']) => {
-    // Afficher toujours A3, pas de choix de taille
     const details = [];
     details.push(t('cart.format_a3'));
     const finish = PAPER_FINISHES.find(f => f.id === config.product.selectedPaperFinishId)?.name;
@@ -41,11 +38,10 @@ const Cart = () => {
     const mapStyleName = MAP_STYLE_OPTIONS.find(m => m.id === config.map.selectedStyleId)?.name;
     if (mapStyleName) details.push(t('cart.map_style', { style: mapStyleName }));
     return details.join(' · ');
-  }
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6 text-white max-w-4xl mx-auto">
-      {/* Header */}
       <div className="space-y-1 mb-6">
         <h1 className="text-2xl font-semibold font-sans">{t('cart.title')}</h1>
         <p className="text-gray-400 font-light text-sm">
@@ -68,13 +64,11 @@ const Cart = () => {
         <div className="space-y-5">
           {cartItems.map((item) => (
             <React.Fragment key={item.id}>
-              {/* Card Container - Vertical Layout amélioré */}
               <div className="flex flex-col bg-[#333333] rounded-sm shadow-lg overflow-hidden border border-gray-700 max-w-xs mx-auto">
-                {/* Image Area - Full Width at Top */}
                 <div
                   className="w-full rounded-t-sm flex items-center justify-center py-5 bg-[#222]"
                   style={{
-                    aspectRatio: "0.707", // Largeur/Hauteur pour A3
+                    aspectRatio: "0.707",
                     minHeight: 120,
                     maxHeight: 260,
                   }}
@@ -91,28 +85,22 @@ const Cart = () => {
                   )}
                 </div>
 
-                {/* Content Area - Below Image */}
                 <div className="p-4 flex flex-col flex-grow min-h-[120px]">
-                  {/* Title */}
                   <div
                     className="font-semibold font-sans text-base mb-1 truncate cart-item-title text-white"
                     style={{ maxWidth: '100%' }}
                     dangerouslySetInnerHTML={{ __html: item.posterConfiguration.labels.title.text || t('cart.custom_poster') }}
                   />
 
-                  {/* Details Section */}
                   <div
                     className="text-xs text-gray-400 font-light leading-snug mb-3 cart-item-details truncate"
                     style={{ maxWidth: '100%' }}
                     dangerouslySetInnerHTML={{ __html: getItemDetails(item.posterConfiguration) }}
                   />
 
-                  {/* Bottom Section: Price & Remove */}
                   <div className="mt-auto pt-2 flex items-center justify-between">
-                    {/* Price */}
                     <p className="text-base font-semibold font-sans text-orange-400">{formatPrice(item.posterConfiguration.product.price)}</p>
 
-                    {/* Remove Button Only */}
                     <button
                       onClick={() => dispatch(removeFromCart(item.id))}
                       className="text-gray-500 hover:text-red-500 transition-colors p-1 cursor-pointer"
@@ -126,7 +114,6 @@ const Cart = () => {
             </React.Fragment>
           ))}
 
-          {/* Cart Summary & Checkout Button */}
           <div className="pt-8 mt-8 border-t border-gray-600 space-y-5">
              <div className="flex justify-between items-center text-base font-semibold font-sans">
                 <span>{t('cart.total')}</span>

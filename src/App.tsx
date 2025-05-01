@@ -1,6 +1,6 @@
 import { RootState, AppDispatch } from "./store"; // Import AppDispatch
 import Header from "./components/Header";
-import { useState, useRef, useEffect } from "react"; // Added useEffect
+import {  useRef, useEffect } from "react"; // Added useEffect
 import Sidebar from "./components/Sidebar";
 import { toggleSidebar } from "./store/sidebarSlice";
 import { useDispatch, useSelector } from "react-redux";

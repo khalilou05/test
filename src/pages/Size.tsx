@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import {
   setPaperSize,
   PAPER_SIZES,
 } from '../store/productSlice';
-import { addPosterToCart, CartItem } from '../store/cartSlice';
+import { addPosterToCart } from '../store/cartSlice';
 import { EditorPreviewRef } from '../components/EditorPreview';
 import { Radio, RadioGroup, Label, Field } from '@headlessui/react';
 import clsx from 'clsx';
