@@ -249,7 +249,6 @@ const Success = () => {
         </div>
         <div className="space-y-3">
           {paidItems.map((item, index) => {
-            const isDisabled = item.downloaded; 
             const buttonText = item.downloaded ? t('success.download_again', { num: index + 1 }) : t('success.download', { num: index + 1 });
             const itemTitle = item.name || t('success.poster', { num: index + 1 });
 

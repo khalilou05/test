@@ -13,7 +13,6 @@ import {
   deleteActivity,
   clearActivities,
   setActiveActivityIds,
-  toggleActivityActive,
 } from "../store/activitiesSlice";
 import { initializeLabels } from "../store/labelsSlice.ts";
 import {

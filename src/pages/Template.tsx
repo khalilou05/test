@@ -2,7 +2,8 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setLayoutState } from "../store/layoutSlice";
 import { setLabelsState } from "../store/labelsSlice"; 
-import { setPointsState } from "../store/pointsSlice"; 
+import { setPointsState } from "../store/pointsSlice";
+import { StatLabel } from "../types/labels"; 
 import { setMapState } from "../store/mapSlice";
 import { setTraceState } from "../store/traceSlice"; 
 import { setProfileState } from "../store/profileSlice"; 
@@ -13,21 +14,6 @@ import { addPosterToCart } from '../store/cartSlice';
 import CartLoaderOverlay from '../components/CartLoaderOverlay';
 import { useNavigate } from 'react-router-dom';
 
-// Types explicites pour les labels
-interface LabelStyle {
-  fontSize?: number;
-  fontFamily?: string;
-  [key: string]: any;
-}
-interface LabelData {
-  value: string;
-  style: LabelStyle;
-}
-interface LabelsState {
-  title: LabelData;
-  description: LabelData;
-  stats: any[];
-}
 
 interface TemplatePageProps {
   mapEditorRef: any;
@@ -36,7 +22,6 @@ interface TemplatePageProps {
 const TemplatePage: React.FC<TemplatePageProps> = ({ mapEditorRef }) => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const currentLabels = useSelector((state: RootState) => state.labels) as LabelsState;
   const currentTrace = useSelector((state: RootState) => state.trace);
   const currentPoints = useSelector((state: RootState) => state.points);
   const [isAddingToCart, setIsAddingToCart] = React.useState(false);
@@ -65,7 +50,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({ mapEditorRef }) => {
         isVisible: template.labels?.description?.isVisible ?? true,
         style: template.labels?.description?.style || {},
       },
-      stats: Array.isArray(template.labels?.stats) ? template.labels.stats.map(stat => ({
+      stats: Array.isArray(template.labels?.stats) ? template.labels.stats.map((stat: StatLabel) => ({
         label: stat.label || '',
         value: stat.value || '',
         style: stat.style || {},
