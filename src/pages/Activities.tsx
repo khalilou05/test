@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { RootState } from "../store";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { HiTrash, HiUpload, HiX } from "react-icons/hi";
 import { SiStrava } from "react-icons/si";
 import { useDispatch, useSelector } from "react-redux";
-import { handleFileUpload } from "../utils/fileUpload";
-import { HiUpload, HiTrash, HiX } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
-import { useTranslation } from 'react-i18next';
+import { RootState } from "../store";
+import { handleFileUpload } from "../utils/fileUpload";
 
 import {
   addActivity,
-  deleteActivity,
   clearActivities,
+  deleteActivity,
   setActiveActivityIds,
 } from "../store/activitiesSlice";
 import { initializeLabels } from "../store/labelsSlice.ts";
 import {
+  clearPoints,
   initializePoints,
   removePointsByActivityId,
-  clearPoints,
 } from "../store/pointsSlice"; // Import clearPoints
 import Activity from "../types/Activity";
 
+import CartLoaderOverlay from "../components/CartLoaderOverlay";
+import { addPosterToCart } from "../store/cartSlice";
 import { updateStat } from "../store/labelsSlice";
-import { addPosterToCart } from '../store/cartSlice';
-import CartLoaderOverlay from '../components/CartLoaderOverlay';
 
 interface ActivitiesProps {
   mapEditorRef: any;
@@ -58,8 +58,8 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
 
   const stravaRedirectUri = getStravaRedirectUri();
 
-  console.log('Environment:', import.meta.env.MODE);
-  console.log('Strava Redirect URI:', stravaRedirectUri);
+  console.log("Environment:", import.meta.env.MODE);
+  console.log("Strava Redirect URI:", stravaRedirectUri);
 
   // --- Effet pour gérer le retour de l'authentification Strava ---
   useEffect(() => {
@@ -68,10 +68,10 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
     const state = urlParams.get("state");
     const storedState = localStorage.getItem("strava_temp_state");
 
-    console.log('Code:', code);
-    console.log('State:', state);
-    console.log('Stored State:', storedState);
-    console.log('Current URL:', window.location.href);
+    console.log("Code:", code);
+    console.log("State:", state);
+    console.log("Stored State:", storedState);
+    console.log("Current URL:", window.location.href);
 
     if (code && state && state === storedState) {
       localStorage.removeItem("strava_temp_state");
@@ -301,11 +301,13 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
     try {
       const newActivities = await handleFileUpload(event, activities);
       if (newActivities.length > 0) {
-        console.log(`Dispatching ${newActivities.length} new activities from files...`);
+        console.log(
+          `Dispatching ${newActivities.length} new activities from files...`
+        );
         dispatch(addActivity(newActivities));
         dispatch(initializePoints(newActivities));
         // Activer automatiquement les nouvelles activités
-        const newIds = newActivities.map(a => a.id);
+        const newIds = newActivities.map((a) => a.id);
         dispatch(setActiveActivityIds([...activeActivityIds, ...newIds]));
       }
     } catch (err: any) {
@@ -454,7 +456,9 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
 
   const handleAddToCart = async () => {
     if (!mapEditorRef?.current || !mapEditorRef.current.generatePreviewImage) {
-      alert("Erreur : Impossible d'accéder à l'éditeur ou à la carte pour générer l'aperçu.");
+      alert(
+        "Erreur : Impossible d'accéder à l'éditeur ou à la carte pour générer l'aperçu."
+      );
       return;
     }
     setIsAddingToCart(true);
@@ -476,12 +480,16 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
         activeActivityIds,
         activitiesData: activities,
       };
-      dispatch(addPosterToCart({
-        id: `cart-${Date.now()}-${Math.random().toString(16).substring(2, 8)}`,
-        configuration: posterConfiguration,
-        thumbnailUrl: thumbnailUrl ?? undefined,
-      }));
-      navigate('/cart');
+      dispatch(
+        addPosterToCart({
+          id: `cart-${Date.now()}-${Math.random()
+            .toString(16)
+            .substring(2, 8)}`,
+          configuration: posterConfiguration,
+          thumbnailUrl: thumbnailUrl ?? undefined,
+        })
+      );
+      navigate("/cart");
     } catch (error) {
       alert("Erreur lors de l'ajout au panier");
     } finally {
@@ -489,16 +497,48 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
     }
   };
 
+  useEffect(() => {
+    const loadDefaultGpx = async () => {
+      if (activities.length > 0) return; // Do not load if already has activity
+
+      try {
+        const res = await fetch("/paris-marathon.gpx");
+        const text = await res.text();
+
+        const file = new File([text], "paris-marathon.gpx", {
+          type: "application/gpx+xml",
+        });
+
+        // Simulate a fake input event to reuse existing logic
+        const fakeEvent = {
+          target: { files: [file] },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+        const newActivities = await handleFileUpload(fakeEvent, activities);
+        if (newActivities.length > 0) {
+          dispatch(addActivity(newActivities));
+          dispatch(initializePoints(newActivities));
+          const newIds = newActivities.map((a) => a.id);
+          dispatch(setActiveActivityIds([...activeActivityIds, ...newIds]));
+        }
+      } catch (err: any) {
+        console.error("Failed to auto-load Paris Marathon GPX:", err);
+      }
+    };
+
+    loadDefaultGpx();
+  }, []);
+
   // --- Rendu JSX ---
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-full mx-auto md:max-w-none">
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-lg font-semibold font-sans text-white">
-          {t('activities.title')}
+          {t("activities.title")}
         </h1>
         <p className="text-gray-400 font-light text-sm">
-          {t('activities.subtitle')}
+          {t("activities.subtitle")}
         </p>
       </div>
 
@@ -510,7 +550,8 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
             disabled={isLoadingStrava}
             className="w-full text-sm flex justify-center items-center space-x-2 bg-[#FC4C02] hover:bg-[#e04402] text-white py-2.5 rounded-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <SiStrava className="w-5 h-5" /> <span>{t('activities.connect_strava')}</span>
+            <SiStrava className="w-5 h-5" />{" "}
+            <span>{t("activities.connect_strava")}</span>
           </button>
         ) : (
           <button
@@ -518,7 +559,8 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
             disabled={isLoadingStrava}
             className="w-full text-sm flex justify-center items-center space-x-2 bg-[#FC4C02] hover:bg-[#e04402] text-white py-2.5 rounded-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <SiStrava className="w-5 h-5" /> <span>{t('activities.refresh_strava')}</span>
+            <SiStrava className="w-5 h-5" />{" "}
+            <span>{t("activities.refresh_strava")}</span>
           </button>
         )}
         {isLoadingStrava && (
@@ -534,14 +576,15 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
             accept=".gpx,.kml"
             onChange={addActivitiesFromFiles}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-            aria-label={t('activities.import_aria')}
+            aria-label={t("activities.import_aria")}
           />
           <button
             type="button"
             className="w-full text-sm flex justify-center items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-md transition duration-150 ease-in-out"
             onClick={() => document.getElementById("file-upload")?.click()}
           >
-            <HiUpload className="w-5 h-5" /> <span>{t('activities.import')}</span>
+            <HiUpload className="w-5 h-5" />{" "}
+            <span>{t("activities.import")}</span>
           </button>
         </div>
         {activities.length > 0 && (
@@ -549,7 +592,7 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
             onClick={handleClearActivities}
             className="w-full text-sm flex justify-center items-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-md transition duration-150 ease-in-out"
           >
-            <HiTrash className="w-5 h-5" /> <span>{t('activities.clear')}</span>
+            <HiTrash className="w-5 h-5" /> <span>{t("activities.clear")}</span>
           </button>
         )}
       </div>
@@ -564,13 +607,13 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
       {/* Messages conditionnels */}
       {activities.length === 0 && !isLoadingStrava && (
         <div className="text-gray-500 text-sm text-center py-4">
-          {t('activities.none_loaded')}
+          {t("activities.none_loaded")}
         </div>
       )}
       {isLoadingStrava && activities.length === 0 && (
         <div className="flex justify-center items-center py-4">
           <span className="ml-2 text-gray-400 text-sm">
-            {t('activities.loading_strava')}
+            {t("activities.loading_strava")}
           </span>
         </div>
       )}
@@ -609,7 +652,10 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
                       className="text-white font-medium text-sm truncate"
                       title={activity.name}
                     >
-                      {activity.name || t('activities.unnamed', { id: activity.id.substring(0, 5) })}
+                      {activity.name ||
+                        t("activities.unnamed", {
+                          id: activity.id.substring(0, 5),
+                        })}
                     </p>
                     {activity.stravaLink && (
                       <a
@@ -617,17 +663,21 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-shrink-0 text-gray-400 hover:text-[#FFA500]"
-                        title={t('activities.view_on_strava')}
+                        title={t("activities.view_on_strava")}
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={t('activities.view_on_strava')}
+                        aria-label={t("activities.view_on_strava")}
                       >
                         <SiStrava className="w-3.5 h-3.5" />
                       </a>
                     )}
                   </div>
                   <p className="text-gray-400 text-xs">
-                    {activity.source === "strava" ? `${formatDisplayDate(activity.date)} · ` : ""}
-                    {activity.source === "strava" ? `${formatDisplayDuration(activity.duration)} · ` : ""}
+                    {activity.source === "strava"
+                      ? `${formatDisplayDate(activity.date)} · `
+                      : ""}
+                    {activity.source === "strava"
+                      ? `${formatDisplayDuration(activity.duration)} · `
+                      : ""}
                     {formatDisplayDistance(activity.distance)}
                   </p>
                 </div>
@@ -637,8 +687,10 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
                     handleDeleteActivity(activity.id);
                   }}
                   className="flex-shrink-0 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-gray-700 transition duration-150 ease-in-out"
-                  aria-label={t('activities.delete_aria', { name: activity.name })}
-                  title={t('activities.delete_title')}
+                  aria-label={t("activities.delete_aria", {
+                    name: activity.name,
+                  })}
+                  title={t("activities.delete_title")}
                 >
                   <HiX className="w-4 h-4" />
                 </button>
@@ -649,20 +701,38 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
       )}
 
       {/* Bouton Ajouter au panier en bas */}
-      {isAddingToCart && <CartLoaderOverlay message={t('overview.adding_to_cart')} />}
+      {isAddingToCart && (
+        <CartLoaderOverlay message={t("overview.adding_to_cart")} />
+      )}
       <button
         onClick={handleAddToCart}
         disabled={isAddingToCart}
         className="w-full text-sm cursor-pointer flex justify-center items-center space-x-2 bg-orange-500 hover:opacity-75 text-white py-2 rounded-sm disabled:opacity-50 disabled:cursor-wait mt-8"
-        style={{ position: 'sticky', bottom: 0, left: 0 }}
+        style={{ position: "sticky", bottom: 0, left: 0 }}
       >
         {isAddingToCart ? (
           <>
-            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
-            <span>{t('overview.adding_to_cart')}</span>
+            <span>{t("overview.adding_to_cart")}</span>
           </>
         ) : (
           <>
@@ -679,7 +749,7 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
-            <span>{t('overview.add_to_cart')}</span>
+            <span>{t("overview.add_to_cart")}</span>
           </>
         )}
       </button>
