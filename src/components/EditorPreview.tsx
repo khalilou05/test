@@ -1,70 +1,58 @@
-import clsx from "clsx";
 import {
   forwardRef,
-  useState,
-  useEffect,
-  useRef,
-  useImperativeHandle,
-  useCallback,
-  useMemo,
-  ForwardedRef,
   RefObject,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { createRoot, Root as ReactDOMRoot } from "react-dom/client";
-import { store, RootState, AppDispatch } from "../store";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store";
 
 import { LAYOUT_TEMPLATES } from "../store/layoutSlice";
 import { MAP_STYLE_OPTIONS } from "../store/mapSlice";
 import { selectSelectedZoom } from "../store/zoomSlice";
 
 // Mapbox and react-map-gl
-import mapboxgl, {
-  Map as MapboxMap,
-  Marker as MapboxMarker,
-  LngLatLike,
-  PaddingOptions,
-  MapboxEvent, // Import MapboxEvent if not already imported
-} from "mapbox-gl";
+import { LngLatLike, Map as MapboxMap } from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import MapComponent, {
   Layer,
-  Source,
   MapRef,
   Marker,
+  NavigationControl,
+  Source,
   ViewState,
-  NavigationControl, // Import NavigationControl
 } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
 
 // Recharts
 import {
-  AreaChart,
   Area,
-  ResponsiveContainer,
-  LineChart,
+  AreaChart,
   Line,
+  LineChart,
+  ResponsiveContainer,
 } from "recharts";
 
 // GeoJSON types
 import {
-  FeatureCollection,
   Feature,
-  LineString,
+  FeatureCollection,
   Point as GeoJSONPoint,
   Geometry,
+  LineString,
 } from "geojson";
 
 // Internal Imports
-import { ZoomLevel, calculateScale } from "../utils/zoomUtils";
-import { exportPdf } from "../utils/pdfUtils";
-import Activity from "../types/Activity";
-import { Point } from "../store/pointsSlice";
-import CustomMarkerContent from "./CustomMarkerContent.tsx";
-import { PAPER_SIZES } from "../store/productSlice.ts";
-import { markExportAsTriggered } from "../store/checkoutSlice";
-import Spinner from "./Spinner";
 import html2canvas from "html2canvas-pro";
-import { initializePoints } from "../store/pointsSlice";
+import { markExportAsTriggered } from "../store/checkoutSlice";
+import { PAPER_SIZES } from "../store/productSlice.ts";
+import Activity from "../types/Activity";
+import { exportPdf } from "../utils/pdfUtils";
+import { calculateScale } from "../utils/zoomUtils";
+import CustomMarkerContent from "./CustomMarkerContent.tsx";
 
 // --- Constants ---
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
@@ -194,9 +182,12 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
   ({ hideControls = false, ...props }, ref) => {
     const dispatch: AppDispatch = useDispatch();
     // --- Listen to orientation ---
-    const orientation = useSelector((state: RootState) => state.layout.orientation);
+    const orientation = useSelector(
+      (state: RootState) => state.layout.orientation
+    );
     // --- Listen to layout background ---
-    const backgroundColor = useSelector((state: RootState) => state.layout.backgroundColor) || "#fff";
+    const backgroundColor =
+      useSelector((state: RootState) => state.layout.backgroundColor) || "#fff";
     // --- Refs ---
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapRef>(null);
@@ -238,17 +229,23 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
     const product = useSelector((state: RootState) => state.product);
     const checkout = useSelector((state: RootState) => state.checkout);
     const selectedZoom = useSelector(selectSelectedZoom);
-    const titleMargin = useSelector((state: RootState) => state.labels.title.style?.marginTop);
-    const descMargin = useSelector((state: RootState) => state.labels.description.style?.marginTop);
-    const chartHeight = useSelector((state: RootState) => state.profile.chartHeight);
+    const titleMargin = useSelector(
+      (state: RootState) => state.labels.title.style?.marginTop
+    );
+    const descMargin = useSelector(
+      (state: RootState) => state.labels.description.style?.marginTop
+    );
+    const chartHeight = useSelector(
+      (state: RootState) => state.profile.chartHeight
+    );
 
     // --- Derived State & Memos ---
     const activeActivities = useMemo(
       () =>
         Array.isArray(activities)
           ? activities.filter((activity) =>
-            activeActivityIds.includes(activity.id)
-          )
+              activeActivityIds.includes(activity.id)
+            )
           : [],
       [activities, activeActivityIds]
     );
@@ -359,9 +356,23 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
 
       const defs = (
         <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={hexColor} stopOpacity={0.8} />
-            <stop offset={stopOffset} stopColor={hexColor} stopOpacity={0} />
+          <linearGradient
+            id={gradientId}
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stopColor={hexColor}
+              stopOpacity={0.8}
+            />
+            <stop
+              offset={stopOffset}
+              stopColor={hexColor}
+              stopOpacity={0}
+            />
           </linearGradient>
         </defs>
       );
@@ -439,7 +450,7 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
           containerRef.current?.classList.add("is-exporting");
           setIsExporting(true);
           // Attendre que le DOM se mette à jour (sinon les boutons restent dans le PDF)
-          await new Promise(res => setTimeout(res, 120));
+          await new Promise((res) => setTimeout(res, 120));
           await exportPdf(
             containerRef,
             mapContainerRef,
@@ -523,15 +534,20 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
 
       // Let Mapbox handle the event type implicitly for the callback
       // @ts-ignore - Ignoring persistent type error on map.once signature
-      map.once("idle", () => { // Reverted to simplest callback signature
-        if (mapInstanceRef.current) {
-          console.log("Map is idle. Resizing and setting ready.");
-          mapInstanceRef.current.resize(); // Resize needed after load
-          setIsMapReady(true);
-          toggleMapLabels(mapInstanceRef.current, mapStyleState.showLabels);
-          toggleMapTerrain(mapInstanceRef.current, mapStyleState.showTerrain);
-        }
-      }, 3000); // Reduced timeout slightly? Test this value. Maybe 2000 or 2500?
+      map.once(
+        "idle",
+        () => {
+          // Reverted to simplest callback signature
+          if (mapInstanceRef.current) {
+            console.log("Map is idle. Resizing and setting ready.");
+            mapInstanceRef.current.resize(); // Resize needed after load
+            setIsMapReady(true);
+            toggleMapLabels(mapInstanceRef.current, mapStyleState.showLabels);
+            toggleMapTerrain(mapInstanceRef.current, mapStyleState.showTerrain);
+          }
+        },
+        3000
+      ); // Reduced timeout slightly? Test this value. Maybe 2000 or 2500?
       const readyTimeout = setTimeout(() => {
         if (!isMapReady && mapInstanceRef.current) {
           mapInstanceRef.current.resize();
@@ -671,9 +687,14 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
       if (!isMapReady || !map) return;
       const currentMap = map;
       console.log("Adjusting map: Resizing first...");
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       // PATCH: Secure resize call
-      if (currentMap && typeof currentMap.resize === 'function' && currentMap.getContainer && currentMap.getContainer()) {
+      if (
+        currentMap &&
+        typeof currentMap.resize === "function" &&
+        currentMap.getContainer &&
+        currentMap.getContainer()
+      ) {
         currentMap.resize();
       } else {
         console.warn("Skip map.resize(): container or method missing");
@@ -681,10 +702,12 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
       console.log("Waiting for map idle after resize...");
       await new Promise((resolve) => {
         const timeoutId = setTimeout(() => {
-          console.warn("Map idle timeout after resize during adjustMap (500ms).");
+          console.warn(
+            "Map idle timeout after resize during adjustMap (500ms)."
+          );
           resolve(null);
         }, 500);
-        currentMap.once('idle', () => {
+        currentMap.once("idle", () => {
           clearTimeout(timeoutId);
           console.log("Map idle after resize, proceeding to fit bounds.");
           resolve(null);
@@ -755,13 +778,20 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
         });
       }
       console.log("Map adjustment sequence finished.");
-    }, [isMapReady, mapInstanceRef, activeActivities, points, activeActivityIds, orientation]);
+    }, [
+      isMapReady,
+      mapInstanceRef,
+      activeActivities,
+      points,
+      activeActivityIds,
+      orientation,
+    ]);
 
     // --- Force Map Resize on Data Change ---
     useEffect(() => {
       adjustMapAsync();
       // Nettoyage global du hook si besoin
-      return () => { };
+      return () => {};
     }, [
       layout.selectedLayoutId,
       layout.orientation, // Ajout de layout.orientation pour forcer le fit/zoom sur changement Portrait/Landscape
@@ -776,7 +806,7 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
       profileStyle.chartHeight,
       titleMargin,
       descMargin,
-      baseDimensions // Ajout de baseDimensions pour recalculer le fitBounds quand la taille du poster change
+      baseDimensions, // Ajout de baseDimensions pour recalculer le fitBounds quand la taille du poster change
     ]);
 
     // --- Ajustement carte sur changement fontSize des labels ---
@@ -785,7 +815,7 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
     }, [
       labels.title.style.fontSize,
       labels.description.style.fontSize,
-      ...labels.stats.map(s => s.style?.fontSize)
+      ...labels.stats.map((s) => s.style?.fontSize),
     ]);
 
     // --- Elevation Data ---
@@ -820,20 +850,31 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
         .map((p) => [p.longitude, p.latitude])
         .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
       if (coords.length !== (points?.length || 0)) {
-        console.warn('Certains points du trace sont invalides et ont été ignorés pour fitBounds.');
+        console.warn(
+          "Certains points du trace sont invalides et ont été ignorés pour fitBounds."
+        );
       }
       if (coords.length >= 2) {
-        let minLng = Math.min(...coords.map(c => c[0]));
-        let minLat = Math.min(...coords.map(c => c[1]));
-        let maxLng = Math.max(...coords.map(c => c[0]));
-        let maxLat = Math.max(...coords.map(c => c[1]));
+        let minLng = Math.min(...coords.map((c) => c[0]));
+        let minLat = Math.min(...coords.map((c) => c[1]));
+        let maxLng = Math.max(...coords.map((c) => c[0]));
+        let maxLat = Math.max(...coords.map((c) => c[1]));
         if ([minLng, minLat, maxLng, maxLat].every(Number.isFinite)) {
           map.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
+            [
+              [minLng, minLat],
+              [maxLng, maxLat],
+            ],
             { padding: 40, animate: true, maxZoom: 17 }
           );
         } else {
-          console.warn('fitBounds annulé : bbox contient des valeurs non finies', minLng, minLat, maxLng, maxLat);
+          console.warn(
+            "fitBounds annulé : bbox contient des valeurs non finies",
+            minLng,
+            minLat,
+            maxLng,
+            maxLat
+          );
         }
       } else if (coords.length === 1) {
         map.flyTo({ center: coords[0], zoom: 15, animate: true });
@@ -845,66 +886,86 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
     const safeScale = Number.isFinite(scale) ? scale : 1;
 
     // Debug log
-    console.log('chartHeight', chartHeight, 'scale', scale, 'product.selectedPaperSizeId', product.selectedPaperSizeId);
+    console.log(
+      "chartHeight",
+      chartHeight,
+      "scale",
+      scale,
+      "product.selectedPaperSizeId",
+      product.selectedPaperSizeId
+    );
 
     // --- Generate Preview Image --- NEW FUNCTION
-    const generatePreviewImage = useCallback(async (): Promise<string | null> => {
-      if (!containerRef.current) {
-        console.error("generatePreviewImage: containerRef is not available.");
-        return null;
-      }
+    const generatePreviewImage = useCallback(
+      async (): Promise<string | null> => {
+        if (!containerRef.current) {
+          console.error("generatePreviewImage: containerRef is not available.");
+          return null;
+        }
 
-      const node = containerRef.current;
-      node.classList.add("is-exporting");
-      // Sauvegarde des styles originaux
-      const prevTransform = node.style.transform;
-      const prevZoom = node.style.zoom;
-      const prevBackground = node.style.background;
-      // Forcer le zoom/scale à 100% et le fond blanc
-      node.style.transform = "scale(1)";
-      node.style.zoom = "100%";
-      node.style.background = layout.backgroundColor || "#fff";
+        const node = containerRef.current;
+        node.classList.add("is-exporting");
+        // Sauvegarde des styles originaux
+        const prevTransform = node.style.transform;
+        const prevZoom = node.style.zoom;
+        const prevBackground = node.style.background;
+        // Forcer le zoom/scale à 100% et le fond blanc
+        node.style.transform = "scale(1)";
+        node.style.zoom = "100%";
+        node.style.background = layout.backgroundColor || "#fff";
 
-      // --- DPI élevé comme export PDF ---
-      const targetDpi = 300;
-      const originalPixelRatio = window.devicePixelRatio;
-      const calculatedPixelRatio = targetDpi / 96;
-      Object.defineProperty(window, 'devicePixelRatio', {
-        value: calculatedPixelRatio,
-        writable: true
-      });
-      const scale = calculatedPixelRatio;
-
-      const controls = Array.from(document.querySelectorAll('.mapboxgl-ctrl-top-right, .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl')) as HTMLElement[];
-      const previousDisplays = controls.map(el => el.style.display);
-      controls.forEach(el => { el.style.display = 'none'; });
-
-      try {
-        const canvas = await html2canvas(node, {
-          scale: scale,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
+        // --- DPI élevé comme export PDF ---
+        const targetDpi = 300;
+        const originalPixelRatio = window.devicePixelRatio;
+        const calculatedPixelRatio = targetDpi / 96;
+        Object.defineProperty(window, "devicePixelRatio", {
+          value: calculatedPixelRatio,
+          writable: true,
         });
-        // Optionnel : ici, tu pourrais remplacer la zone carte par le vrai canvas Mapbox
-        const dataUrl = canvas.toDataURL("image/png");
-        return dataUrl;
-      } catch (error) {
-        console.error("generatePreviewImage: error generating preview image:", error);
-        return null;
-      } finally {
-        controls.forEach((el, i) => { el.style.display = previousDisplays[i]; });
-        node.classList.remove("is-exporting");
-        node.style.transform = prevTransform;
-        node.style.zoom = prevZoom;
-        node.style.background = prevBackground;
-        // Restaure le devicePixelRatio d'origine
-        Object.defineProperty(window, 'devicePixelRatio', {
-          value: originalPixelRatio,
-          writable: true
+        const scale = calculatedPixelRatio;
+
+        const controls = Array.from(
+          document.querySelectorAll(
+            ".mapboxgl-ctrl-top-right, .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl"
+          )
+        ) as HTMLElement[];
+        const previousDisplays = controls.map((el) => el.style.display);
+        controls.forEach((el) => {
+          el.style.display = "none";
         });
+
+        try {
+          const canvas = await html2canvas(node, {
+            scale: scale,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+          });
+          // Optionnel : ici, tu pourrais remplacer la zone carte par le vrai canvas Mapbox
+          const dataUrl = canvas.toDataURL("image/png");
+          return dataUrl;
+        } catch (error) {
+          console.error(
+            "generatePreviewImage: error generating preview image:",
+            error
+          );
+          return null;
+        } finally {
+          controls.forEach((el, i) => {
+            el.style.display = previousDisplays[i];
+          });
+          node.classList.remove("is-exporting");
+          node.style.transform = prevTransform;
+          node.style.zoom = prevZoom;
+          node.style.background = prevBackground;
+          // Restaure le devicePixelRatio d'origine
+          Object.defineProperty(window, "devicePixelRatio", {
+            value: originalPixelRatio,
+            writable: true,
+          });
+        }
       }
-    });
+    );
 
     // --- Expose Imperative Handles ---
     useImperativeHandle(ref, () => ({
@@ -961,29 +1022,28 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
     // --- JSX ---
     const selectedStyleId = mapStyleState.selectedStyleId;
     const showTerrain = mapStyleState.showTerrain;
-    const selectedStyleInfo = MAP_STYLE_OPTIONS.find(s => s.id === selectedStyleId);
+    const selectedStyleInfo = MAP_STYLE_OPTIONS.find(
+      (s) => s.id === selectedStyleId
+    );
     const is3D = showTerrain && selectedStyleInfo?.hasTerrain;
 
     return (
       <div
-      ref={containerRef}
-      className="max-w-full  mx-auto md:w-full shadow-lg overflow-hidden relative print-container"
-      style={{
-        width: scaledDimensions.width,
-        height: scaledDimensions.height,
-        background: backgroundColor,
-        border: `${layout.border.thickness}px solid ${layout.border.color}`,
-        paddingTop: `${scaledMargins.top}px`,
-        paddingRight: `${scaledMargins.right}px`,
-        paddingBottom: `${scaledMargins.bottom}px`,
-        paddingLeft: `${scaledMargins.left}px`,
-        boxSizing: "border-box",
-        aspectRatio: scaledDimensions.width / scaledDimensions.height, // optional: keeps shape ratio
-      }}
-    >
-    
-
-      
+        ref={containerRef}
+        className="max-w-full  mx-auto md:w-full shadow-lg overflow-hidden relative print-container"
+        style={{
+          width: scaledDimensions.width,
+          height: scaledDimensions.height,
+          background: backgroundColor,
+          border: `${layout.border.thickness}px solid ${layout.border.color}`,
+          paddingTop: `${scaledMargins.top}px`,
+          paddingRight: `${scaledMargins.right}px`,
+          paddingBottom: `${scaledMargins.bottom}px`,
+          paddingLeft: `${scaledMargins.left}px`,
+          boxSizing: "border-box",
+          aspectRatio: scaledDimensions.width / scaledDimensions.height, // optional: keeps shape ratio
+        }}
+      >
         {/* Remove the Export Overlay section if it's commented out or not needed */}
         {/* {isExporting && (
         <div
@@ -1016,12 +1076,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -1200,7 +1264,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     style={{
                       height: `${safeChartHeight * safeScale}px`,
                       width: "100%",
-                      marginBottom: `${20 * scale}px` /* Add some space before stats */,
+                      marginBottom: `${
+                        20 * scale
+                      }px` /* Add some space before stats */,
                     }}
                   >
                     <ResponsiveContainer>
@@ -1272,12 +1338,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers (Common logic can be extracted) */}
                   {isMapReady &&
@@ -1362,8 +1432,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 {/* Text Block */}
                 <div
                   style={{
-                    padding: `${scaledMargins.top / 1.5}px ${scaledMargins.left / 1.5
-                      }px`,
+                    padding: `${scaledMargins.top / 1.5}px ${
+                      scaledMargins.left / 1.5
+                    }px`,
                   }}
                 >
                   {labels.title.isVisible && (
@@ -1390,8 +1461,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 <div
                   style={{
                     borderTop: `${2 * scale}px solid ${scaledTitleStyle.color}`, // Scaled top border
-                    padding: `${scaledMargins.top / 1.5}px ${scaledMargins.left / 1.5
-                      }px`,
+                    padding: `${scaledMargins.top / 1.5}px ${
+                      scaledMargins.left / 1.5
+                    }px`,
                   }}
                 >
                   {displayStats.length > 0 && (
@@ -1515,7 +1587,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                       ...scaledDescriptionStyle,
                       marginBottom: `${34 * scale}px` /* Scaled margin */,
                     }}
-                    dangerouslySetInnerHTML={{ __html: labels.description.text }}
+                    dangerouslySetInnerHTML={{
+                      __html: labels.description.text,
+                    }}
                   />
                 )}
               </div>
@@ -1543,12 +1617,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     preserveDrawingBuffer={true}
                     interactive={true}
                     dragRotate={is3D}
-                    pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                    bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                    pitch={is3D ? viewState.pitch ?? 45 : 0}
+                    bearing={is3D ? viewState.bearing ?? 0 : 0}
                   >
                     {/* Contrôle de navigation (zoom + -) */}
                     {!(isExporting || hideControls) && (
-                      <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                      <NavigationControl
+                        position="top-right"
+                        showCompass={is3D}
+                        visualizePitch={is3D}
+                      />
                     )}
                     {/* Render Traces and Markers */}
                     {isMapReady &&
@@ -1633,7 +1711,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     style={{
                       height: `${safeChartHeight * safeScale}px`,
                       width: "100%",
-                      marginBottom: `${20 * scale}px` /* Add some space before stats */,
+                      marginBottom: `${
+                        20 * scale
+                      }px` /* Add some space before stats */,
                     }}
                   >
                     <ResponsiveContainer>
@@ -1752,12 +1832,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     preserveDrawingBuffer={true}
                     interactive={true}
                     dragRotate={is3D}
-                    pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                    bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                    pitch={is3D ? viewState.pitch ?? 45 : 0}
+                    bearing={is3D ? viewState.bearing ?? 0 : 0}
                   >
                     {/* Contrôle de navigation (zoom + -) */}
                     {!(isExporting || hideControls) && (
-                      <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                      <NavigationControl
+                        position="top-right"
+                        showCompass={is3D}
+                        visualizePitch={is3D}
+                      />
                     )}
                     {/* Render Traces and Markers */}
                     {isMapReady &&
@@ -1976,12 +2060,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -2216,12 +2304,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -2437,9 +2529,7 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
               </div>
             </>
           ) : layout.selectedLayoutId === "layout-7" ? (
-            <div
-              className="flex h-full"
-            >
+            <div className="flex h-full">
               {" "}
               {/* Main flex container */}
               {/* Left Column (Vertical Text) */}
@@ -2454,8 +2544,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 <div
                   className="absolute bottom-0 left-0 transform -rotate-90 origin-top-left whitespace-nowrap text-right"
                   style={{
-                    width: `calc(100% + ${90.6271 * scale
-                      }px)` /* Keep height logic like layout-7 */,
+                    width: `calc(100% + ${
+                      90.6271 * scale
+                    }px)` /* Keep height logic like layout-7 */,
                   }}
                 >
                   {/* Description (Rendered first in DOM, appears above Title due to rotation) */}
@@ -2466,7 +2557,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                         marginBottom: `${34 * scale}px`,
                         textAlign: "right",
                       }}
-                      dangerouslySetInnerHTML={{ __html: labels.description.text }}
+                      dangerouslySetInnerHTML={{
+                        __html: labels.description.text,
+                      }}
                     />
                   )}
                   {/* Title */}
@@ -2478,7 +2571,6 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   )}
                 </div>
               </div>
-
               {/* Right Column (Map & Bottom Content) */}
               <div className="flex-1 flex flex-col">
                 {/* Map Area */}
@@ -2499,12 +2591,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     preserveDrawingBuffer={true}
                     interactive={true}
                     dragRotate={is3D}
-                    pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                    bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                    pitch={is3D ? viewState.pitch ?? 45 : 0}
+                    bearing={is3D ? viewState.bearing ?? 0 : 0}
                   >
                     {/* Contrôle de navigation (zoom + -) */}
                     {!(isExporting || hideControls) && (
-                      <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                      <NavigationControl
+                        position="top-right"
+                        showCompass={is3D}
+                        visualizePitch={is3D}
+                      />
                     )}
                     {/* Render Traces and Markers */}
                     {isMapReady &&
@@ -2702,12 +2798,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -2944,8 +3044,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   <div
                     className="absolute bottom-0 left-0 transform -rotate-90 origin-top-left whitespace-nowrap text-right" // Align text right
                     style={{
-                      width: `calc(100% + ${90.6271 * scale
-                        }px)` /* Keep height logic like layout-7 */,
+                      width: `calc(100% + ${
+                        90.6271 * scale
+                      }px)` /* Keep height logic like layout-7 */,
                     }}
                   >
                     {/* Description (Rendered first in DOM, appears above Title due to rotation) */}
@@ -3093,12 +3194,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                     preserveDrawingBuffer={true}
                     interactive={true}
                     dragRotate={is3D}
-                    pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                    bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                    pitch={is3D ? viewState.pitch ?? 45 : 0}
+                    bearing={is3D ? viewState.bearing ?? 0 : 0}
                   >
                     {/* Contrôle de navigation (zoom + -) */}
                     {!(isExporting || hideControls) && (
-                      <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                      <NavigationControl
+                        position="top-right"
+                        showCompass={is3D}
+                        visualizePitch={is3D}
+                      />
                     )}
                     {/* Render Traces and Markers */}
                     {isMapReady &&
@@ -3184,7 +3289,10 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 style={{ paddingBottom: `${27.62 * scale}px` }}
               >
                 {/* Left: Text Block */}
-                <div className="flex-1" style={{ flexBasis: "50%" }}>
+                <div
+                  className="flex-1"
+                  style={{ flexBasis: "50%" }}
+                >
                   {" "}
                   {/* Adjust basis as needed */}
                   {labels.title.isVisible && (
@@ -3269,7 +3377,12 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 style={{ paddingBottom: `${27.62 * scale}px` }} // Space before text/stats block
               >
                 {profileStyle.isVisible && elevationData.length > 1 && (
-                  <div style={{ height: `${safeChartHeight * safeScale}px`, width: "100%" }}>
+                  <div
+                    style={{
+                      height: `${safeChartHeight * safeScale}px`,
+                      width: "100%",
+                    }}
+                  >
                     <ResponsiveContainer>
                       {profileStyle.style === "area" ? (
                         <AreaChart
@@ -3328,12 +3441,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -3431,12 +3548,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -3515,7 +3636,12 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 style={{ paddingBottom: `${107.62 * scale}px` }} // Space before text/stats block
               >
                 {profileStyle.isVisible && elevationData.length > 1 && (
-                  <div style={{ height: `${safeChartHeight * safeScale}px`, width: "100%" }}>
+                  <div
+                    style={{
+                      height: `${safeChartHeight * safeScale}px`,
+                      width: "100%",
+                    }}
+                  >
                     <ResponsiveContainer>
                       {profileStyle.style === "area" ? (
                         <AreaChart
@@ -3561,7 +3687,10 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 className="flex-none flex" // Row flex, no grow/shrink
               >
                 {/* Left: Text Block */}
-                <div className="flex-1" style={{ flexBasis: "50%" }}>
+                <div
+                  className="flex-1"
+                  style={{ flexBasis: "50%" }}
+                >
                   {" "}
                   {/* Takes 50% width */}
                   {labels.title.isVisible && (
@@ -3667,12 +3796,16 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   preserveDrawingBuffer={true}
                   interactive={true}
                   dragRotate={is3D}
-                  pitch={is3D ? (viewState.pitch ?? 45) : 0}
-                  bearing={is3D ? (viewState.bearing ?? 0) : 0}
+                  pitch={is3D ? viewState.pitch ?? 45 : 0}
+                  bearing={is3D ? viewState.bearing ?? 0 : 0}
                 >
                   {/* Contrôle de navigation (zoom + -) */}
                   {!(isExporting || hideControls) && (
-                    <NavigationControl position="top-right" showCompass={is3D} visualizePitch={is3D} />
+                    <NavigationControl
+                      position="top-right"
+                      showCompass={is3D}
+                      visualizePitch={is3D}
+                    />
                   )}
                   {/* Render Traces and Markers */}
                   {isMapReady &&
@@ -3754,8 +3887,9 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                   <div
                     style={{
                       ...scaledTitleStyle,
-                      marginBottom: `${1 * scale
-                        }px` /* From layout-3 example */,
+                      marginBottom: `${
+                        1 * scale
+                      }px` /* From layout-3 example */,
                     }}
                     dangerouslySetInnerHTML={{ __html: labels.title.text }}
                   />
@@ -3832,12 +3966,20 @@ const EditorPreview = forwardRef<EditorPreviewRef, EditorPreviewProps>(
                 {/* Elevation Profile */}
                 <div
                   className="flex-none"
-                  style={{ paddingTop: `${17.9704 * scale}px`, paddingBottom: `${1 * scale}px` }}
+                  style={{
+                    paddingTop: `${17.9704 * scale}px`,
+                    paddingBottom: `${1 * scale}px`,
+                  }}
                 >
                   {" "}
                   {/* Added padding above profile */}
                   {profileStyle.isVisible && elevationData.length > 1 && (
-                    <div style={{ height: `${safeChartHeight * safeScale}px`, width: "100%" }}>
+                    <div
+                      style={{
+                        height: `${safeChartHeight * safeScale}px`,
+                        width: "100%",
+                      }}
+                    >
                       <ResponsiveContainer>
                         {profileStyle.style === "area" ? (
                           <AreaChart
