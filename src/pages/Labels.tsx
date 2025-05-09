@@ -1,71 +1,63 @@
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-} from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
-import { RootState } from "../store";
-import {
-  setTitle,
-  setTitleVisibility,
-  setDescription,
-  setDescriptionVisibility,
-  addStat,
-  updateStat,
-  removeStat,
-  reorderStat,
-  updateLabelStyle,
-  updateStatStyle,
-} from "../store/labelsSlice";
 import {
   Field,
-  Input,
   Label as HeadlessLabel,
+  Input,
   Listbox,
   ListboxButton,
   ListboxOption,
   ListboxOptions,
 } from "@headlessui/react";
+import { ChevronDownIcon, MinusIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  FaAlignCenter,
+  FaAlignLeft,
+  FaAlignRight,
+  FaArrowDown,
+  FaArrowUp,
   FaEye,
   FaEyeSlash,
-  FaTrash,
   FaGripLines,
-  FaPlus,
   FaItalic,
-  FaAlignLeft,
-  FaAlignCenter,
-  FaAlignRight,
+  FaPlus,
   FaTextHeight,
-  FaArrowUp,
-  FaArrowDown,
+  FaTrash,
 } from "react-icons/fa";
+import { useDispatch, useSelector, useStore } from "react-redux";
+import { RootState } from "../store";
 import {
-  ChevronDownIcon,
-  MinusIcon,
-} from "@heroicons/react/20/solid";
+  addStat,
+  removeStat,
+  reorderStat,
+  setDescription,
+  setDescriptionVisibility,
+  setTitle,
+  setTitleVisibility,
+  updateLabelStyle,
+  updateStat,
+  updateStatStyle,
+} from "../store/labelsSlice";
 
 // Tooltip Import
 import { Tooltip } from "react-tooltip";
 
 // Tiptap imports
-import { useEditor, EditorContent, Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import TextStyle from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import FontFamily from "@tiptap/extension-font-family";
 import TextAlign from "@tiptap/extension-text-align";
+import TextStyle from "@tiptap/extension-text-style";
+import { Editor, EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
 // Dnd-kit imports
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -75,12 +67,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 // Translation Import
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 // Router imports
-import { useNavigate } from 'react-router-dom';
-import { addPosterToCart } from '../store/cartSlice';
-import CartLoaderOverlay from '../components/CartLoaderOverlay';
+import { useNavigate } from "react-router-dom";
+import CartLoaderOverlay from "../components/CartLoaderOverlay";
+import { addPosterToCart } from "../store/cartSlice";
 
 // --- Available Fonts ---
 const AVAILABLE_FONTS = [
@@ -132,7 +124,10 @@ const AVAILABLE_FONTS = [
   { label: "Fruktur", value: "'Fruktur', cursive" },
   { label: "Gagalin", value: "'Gagalin', cursive" },
   { label: "Germania One", value: "'Germania One', sans-serif" },
-  { label: "Glacial Indifference", value: "'Glacial Indifference', sans-serif" },
+  {
+    label: "Glacial Indifference",
+    value: "'Glacial Indifference', sans-serif",
+  },
   { label: "Godoia", value: "'Godoia', serif" },
   { label: "Godoia Deco", value: "'Godoia Deco', serif" },
   { label: "Goudy Bookletter 1911", value: "'Goudy Bookletter 1911', serif" },
@@ -148,7 +143,10 @@ const AVAILABLE_FONTS = [
   { label: "Kontanter", value: "'Kontanter', sans-serif" },
   { label: "Lato", value: "'Lato', sans-serif" },
   { label: "League Gothic", value: "'League Gothic', sans-serif" },
-  { label: "League Gothic Condensed", value: "'League Gothic Condensed', sans-serif" },
+  {
+    label: "League Gothic Condensed",
+    value: "'League Gothic Condensed', sans-serif",
+  },
   { label: "League Mono", value: "'League Mono', monospace" },
   { label: "League Script", value: "'League Script', cursive" },
   { label: "League Spartan", value: "'League Spartan', sans-serif" },
@@ -203,7 +201,10 @@ const AVAILABLE_FONTS = [
   { label: "Spectral", value: "'Spectral', serif" },
   { label: "Sunday", value: "'Sunday', cursive" },
   { label: "Tenor Sans", value: "'Tenor Sans', sans-serif" },
-  { label: "Typeface Claire-Obscure", value: "'Typeface Claire-Obscure', sans-serif" },
+  {
+    label: "Typeface Claire-Obscure",
+    value: "'Typeface Claire-Obscure', sans-serif",
+  },
   { label: "Typeface Pleine", value: "'Typeface Pleine', sans-serif" },
   { label: "Ultra", value: "'Ultra', serif" },
   { label: "UnifrakturCook", value: "'UnifrakturCook', cursive" },
@@ -212,7 +213,7 @@ const AVAILABLE_FONTS = [
   { label: "Varela Round", value: "'Varela Round', sans-serif" },
   { label: "Vollkorn", value: "'Vollkorn', serif" },
   { label: "Work Sans", value: "'Work Sans', sans-serif" },
-  { label: "Yatra One", value: "'Yatra One', cursive" }
+  { label: "Yatra One", value: "'Yatra One', cursive" },
 ];
 
 // --- Available Font Weights ---
@@ -230,18 +231,18 @@ const DEFAULT_STAT_COLOR = "#333333"; // Kept for logic, Tailwind for styling
 
 // --- BASE STYLES FOR UI ELEMENTS ---
 const baseInputClasses =
-  "block w-full rounded-md border-0 bg-neutral-800/80 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500 text-white placeholder:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed";
+  "block w-[85%] rounded-md border-0 bg-neutral-800/80 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500 text-white placeholder:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed w-full";
 const baseIconButtonClasses =
   "relative inline-flex items-center justify-center p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-700/80 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
 const activeIconButtonClasses = "bg-blue-600 text-white hover:bg-blue-700";
 const baseDropdownButtonClasses =
-  "relative w-full cursor-default rounded-md bg-neutral-800/80 py-1.5 pl-3 pr-10 text-left text-white shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed";
+  "relative w-[85%] cursor-default rounded-md bg-neutral-800/80 py-1.5 pl-3 pr-10 text-left text-white shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed w-full";
 const baseDropdownOptionsContainerClasses =
-  "absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md bg-neutral-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm";
+  "absolute z-30 mt-1 left-0 right-0 max-h-56  max-w-full overflow-auto rounded-md bg-neutral-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm";
 const baseDropdownOptionClasses = ({ active }: { active: boolean }) =>
   clsx(
-    "relative cursor-default select-none py-2 pl-3 pr-9",
-    active ? "bg-blue-600 text-white" : "text-neutral-200"
+    "relative cursor-default select-none py-2 pl-3 pr-9 w-full",
+    active ? "bg-blue-600 text-white w-full" : "text-neutral-200 w-full"
   );
 const sectionContainerClasses =
   "space-y-3 rounded-lg border border-neutral-700/50 bg-neutral-800/40 p-4";
@@ -465,8 +466,12 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
       baseIconButtonClasses,
       style.textTransform === buttonTransform && activeIconButtonClasses
     );
-  const currentWeightName =
-    t(`labels.weight_${AVAILABLE_FONT_WEIGHTS.find((fw) => fw.value === style.fontWeight)?.name || 'normal'}`);
+  const currentWeightName = t(
+    `labels.weight_${
+      AVAILABLE_FONT_WEIGHTS.find((fw) => fw.value === style.fontWeight)
+        ?.name || "normal"
+    }`
+  );
 
   // ** CORRECTION: Tooltip application: Only on the final interactive element **
   return (
@@ -478,7 +483,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
         )}
       >
         {/* Ligne 1: Icônes */}
-        <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        <div className="relative flex w-full flex-wrap items-center gap-x-1 gap-y-1">
           {/* Visibilité */}
           <button
             onClick={handleVisibilityToggle}
@@ -591,7 +596,11 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
         </div>
 
         {/* Ligne 2: Font Weight */}
-        <div className={clsx(!isVisible && "opacity-60 pointer-events-none")}>
+        <div
+          className={clsx(
+            !isVisible && "opacity-60 pointer-events-none w-full"
+          )}
+        >
           <Listbox
             value={style.fontWeight}
             onChange={(value) => dispatchStyleUpdate({ fontWeight: value })}
@@ -599,7 +608,10 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
           >
             <div className="relative w-full">
               {/* Tooltip sur le bouton */}
-              <ListboxButton className={baseDropdownButtonClasses}>
+              <ListboxButton
+                style={{ width: "85%" }}
+                className={baseDropdownButtonClasses}
+              >
                 {" "}
                 <span className="block truncate text-sm">
                   {currentWeightName}
@@ -618,7 +630,10 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
                     value={fw.value}
                   >
                     <>
-                      <span className="block truncate"> {t(`labels.weight_${fw.name}`)}</span>{" "}
+                      <span className="block truncate">
+                        {" "}
+                        {t(`labels.weight_${fw.name}`)}
+                      </span>{" "}
                     </>
                   </ListboxOption>
                 ))}{" "}
@@ -630,16 +645,28 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
         {/* Ligne 3: Font Family */}
         <div className={clsx(!isVisible && "opacity-60 pointer-events-none")}>
           <Listbox
-            value={style.fontFamily || AVAILABLE_FONTS.find(f => f.label === "Oswald")?.value}
+            value={
+              style.fontFamily ||
+              AVAILABLE_FONTS.find((f) => f.label === "Oswald")?.value
+            }
             onChange={(value) => dispatchStyleUpdate({ fontFamily: value })}
             disabled={!isVisible}
           >
             <div className="relative w-full">
               {/* Tooltip sur le bouton */}
-              <ListboxButton className={baseDropdownButtonClasses}>
+              <ListboxButton
+                style={{ width: "85%" }}
+                className={baseDropdownButtonClasses}
+              >
                 {" "}
                 <span className="block truncate text-sm">
-                  {AVAILABLE_FONTS.find(f => f.value === (style.fontFamily || AVAILABLE_FONTS.find(f => f.label === "Oswald")?.value))?.label || "Police"}
+                  {AVAILABLE_FONTS.find(
+                    (f) =>
+                      f.value ===
+                      (style.fontFamily ||
+                        AVAILABLE_FONTS.find((f) => f.label === "Oswald")
+                          ?.value)
+                  )?.label || "Police"}
                 </span>{" "}
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                   {" "}
@@ -677,7 +704,10 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
             !isVisible && "opacity-60 pointer-events-none"
           )}
         >
-          <div className="inline-flex items-center rounded-md bg-neutral-800/80 ring-1 ring-inset ring-neutral-700/50 shadow-sm divide-x divide-neutral-700/50">
+          <div
+            style={{ width: "85%" }}
+            className="inline-flex items-center rounded-md bg-neutral-800/80 ring-1 ring-inset ring-neutral-700/50 shadow-sm divide-x divide-neutral-700/50"
+          >
             <Input
               type="number"
               aria-label="Taille de police"
@@ -896,7 +926,7 @@ const StatRowContent = React.memo<StatRowContentProps>(
       typeof setTimeout
     > | null>(null);
 
-    // --- onChange appelle DIRECTEMENT les props du parent --- 
+    // --- onChange appelle DIRECTEMENT les props du parent ---
     const onLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       handleLocalLabelChange(index, e.target.value); // Met à jour localStats DANS Labels
     };
@@ -912,7 +942,9 @@ const StatRowContent = React.memo<StatRowContentProps>(
     const handleColorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newColor = e.target.value;
       setLocalInputColor(newColor);
-      if (localColorDebounceTimeoutRef.current) { clearTimeout(localColorDebounceTimeoutRef.current); }
+      if (localColorDebounceTimeoutRef.current) {
+        clearTimeout(localColorDebounceTimeoutRef.current);
+      }
       localColorDebounceTimeoutRef.current = setTimeout(() => {
         handleLocalStyleChange(index, { color: newColor });
         debounceStyleUpdate(index, { color: newColor });
@@ -921,7 +953,9 @@ const StatRowContent = React.memo<StatRowContentProps>(
     const handleSizeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
       setLocalInputFontSize(rawValue);
-      if (localSizeDebounceTimeoutRef.current) { clearTimeout(localSizeDebounceTimeoutRef.current); }
+      if (localSizeDebounceTimeoutRef.current) {
+        clearTimeout(localSizeDebounceTimeoutRef.current);
+      }
       localSizeDebounceTimeoutRef.current = setTimeout(() => {
         const newSize = parseInt(rawValue, 10);
         if (!isNaN(newSize) && newSize >= 8 && newSize <= 48) {
@@ -933,25 +967,25 @@ const StatRowContent = React.memo<StatRowContentProps>(
       }, 400);
     };
 
-    // --- onBlur appelle le handler du parent --- 
+    // --- onBlur appelle le handler du parent ---
     const onBlur = () => handleSaveChanges(index);
     const onRemove = () => handleRemoveStat(index);
 
     return (
-      <div className="flex flex-col gap-y-2 w-full">
-        {/* Row 1: Label & Value Inputs */} 
-        <div className="flex gap-x-2 w-full">
+      <div className="relative flex flex-col gap-y-2 w-full">
+        {/* Row 1: Label & Value Inputs */}
+        <div className="relative flex gap-x-2 w-full">
           <div className="flex-1 min-w-[100px]">
             <Input
               placeholder="Libellé"
-              // --- MODIFIÉ: Utiliser stat.label (qui vient de localStats) --- 
+              // --- MODIFIÉ: Utiliser stat.label (qui vient de localStats) ---
               value={stat.label}
               onChange={onLabelChange} // Appelle handleLocalLabelChange
               onBlur={onBlur}
               className={clsx(
                 baseInputClasses,
                 "text-xs",
-                "w-full",
+                "w-[85%]",
                 "text-white"
               )}
             />
@@ -959,14 +993,14 @@ const StatRowContent = React.memo<StatRowContentProps>(
           <div className="flex-1 min-w-[80px]">
             <Input
               placeholder="Valeur"
-              // --- MODIFIÉ: Utiliser stat.value (qui vient de localStats) --- 
+              // --- MODIFIÉ: Utiliser stat.value (qui vient de localStats) ---
               value={stat.value}
               onChange={onValueChange} // Appelle handleLocalValueChange
               onBlur={onBlur}
               className={clsx(
                 baseInputClasses,
                 "text-xs",
-                "w-full",
+                "w-[85%]",
                 "text-white"
               )}
             />
@@ -977,7 +1011,10 @@ const StatRowContent = React.memo<StatRowContentProps>(
           {/* Font */}
           <div className="flex-1 min-w-[120px]">
             <Listbox
-              value={stat.style?.fontFamily || AVAILABLE_FONTS.find(f => f.label === "Oswald")?.value}
+              value={
+                stat.style?.fontFamily ||
+                AVAILABLE_FONTS.find((f) => f.label === "Oswald")?.value
+              }
               onChange={onFontChange}
             >
               <div className="relative">
@@ -988,7 +1025,13 @@ const StatRowContent = React.memo<StatRowContentProps>(
                   )}
                 >
                   <span className="block truncate text-neutral-300">
-                    {AVAILABLE_FONTS.find(f => f.value === (stat.style?.fontFamily || AVAILABLE_FONTS.find(f => f.label === "Oswald")?.value))?.label || "Police"}
+                    {AVAILABLE_FONTS.find(
+                      (f) =>
+                        f.value ===
+                        (stat.style?.fontFamily ||
+                          AVAILABLE_FONTS.find((f) => f.label === "Oswald")
+                            ?.value)
+                    )?.label || "Police"}
                   </span>
                   <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
                     {" "}
@@ -1266,12 +1309,18 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
   const trace = useSelector((state: RootState) => state.trace);
   const profile = useSelector((state: RootState) => state.profile);
   const product = useSelector((state: RootState) => state.product);
-  const activities = useSelector((state: RootState) => state.activities.activities);
-  const activeActivityIds = useSelector((state: RootState) => state.activities.activeActivityIds);
+  const activities = useSelector(
+    (state: RootState) => state.activities.activities
+  );
+  const activeActivityIds = useSelector(
+    (state: RootState) => state.activities.activeActivityIds
+  );
 
   const handleAddToCart = async () => {
     if (!mapEditorRef?.current || !mapEditorRef.current.generatePreviewImage) {
-      alert("Erreur : Impossible d'accéder à l'éditeur ou à la carte pour générer l'aperçu.");
+      alert(
+        "Erreur : Impossible d'accéder à l'éditeur ou à la carte pour générer l'aperçu."
+      );
       return;
     }
     setIsAddingToCart(true);
@@ -1293,12 +1342,16 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
         activeActivityIds,
         activitiesData: activities,
       };
-      dispatch(addPosterToCart({
-        id: `cart-${Date.now()}-${Math.random().toString(16).substring(2, 8)}`,
-        configuration: posterConfiguration,
-        thumbnailUrl: thumbnailUrl ?? undefined,
-      }));
-      navigate('/cart');
+      dispatch(
+        addPosterToCart({
+          id: `cart-${Date.now()}-${Math.random()
+            .toString(16)
+            .substring(2, 8)}`,
+          configuration: posterConfiguration,
+          thumbnailUrl: thumbnailUrl ?? undefined,
+        })
+      );
+      navigate("/cart");
     } catch (error) {
       alert("Erreur lors de l'ajout au panier");
     } finally {
@@ -1309,17 +1362,22 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-xl mx-auto md:max-w-none">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold font-sans text-white">{t('labels.title')}</h1>
+        <h1 className="text-xl font-semibold font-sans text-white">
+          {t("labels.title")}
+        </h1>
         <p className="text-neutral-400 font-light text-sm">
-          {t('labels.subtitle')}
+          {t("labels.subtitle")}
         </p>
       </div>
 
-      <Field as="div" className={sectionContainerClasses}>
+      <Field
+        as="div"
+        className={sectionContainerClasses}
+      >
         <HeadlessLabel
           className={"font-sans text-base font-medium text-white pb-3"}
         >
-          {t('labels.label_title')}
+          {t("labels.label_title")}
         </HeadlessLabel>
         <SimpleEditor
           identifier="title"
@@ -1329,11 +1387,14 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
         />
       </Field>
 
-      <Field as="div" className={sectionContainerClasses}>
+      <Field
+        as="div"
+        className={sectionContainerClasses}
+      >
         <HeadlessLabel
           className={"font-sans text-base font-medium text-white pb-3"}
         >
-          {t('labels.label_description')}
+          {t("labels.label_description")}
         </HeadlessLabel>
         <SimpleEditor
           identifier="description"
@@ -1343,9 +1404,12 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
         />
       </Field>
 
-      <Field as="div" className={sectionContainerClasses}>
+      <Field
+        as="div"
+        className={sectionContainerClasses}
+      >
         <HeadlessLabel className={"font-sans text-base font-medium text-white"}>
-          {t('labels.stats')}
+          {t("labels.stats")}
         </HeadlessLabel>
         <DndContext
           sensors={sensors}
@@ -1358,7 +1422,10 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
           >
             <div className="space-y-2 mt-3">
               {localStats.map((localStat, index) => (
-                <SortableItem key={`stat-${index}`} id={`stat-${index}`}>
+                <SortableItem
+                  key={`stat-${index}`}
+                  id={`stat-${index}`}
+                >
                   <StatRowContent
                     stat={localStat}
                     index={index}
@@ -1380,13 +1447,15 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
             className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <FaPlus className="w-4 h-4" />
-            {t('labels.add_stat')}
+            {t("labels.add_stat")}
           </button>
         </div>
       </Field>
 
       {/* Bouton Ajouter au panier en bas, style identique à Overview */}
-      {isAddingToCart && <CartLoaderOverlay message={t('overview.adding_to_cart')} />}
+      {isAddingToCart && (
+        <CartLoaderOverlay message={t("overview.adding_to_cart")} />
+      )}
       <button
         onClick={handleAddToCart}
         disabled={isAddingToCart}
@@ -1394,11 +1463,27 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
       >
         {isAddingToCart ? (
           <>
-            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
-            <span>{t('overview.adding_to_cart')}</span>
+            <span>{t("overview.adding_to_cart")}</span>
           </>
         ) : (
           <>
@@ -1415,7 +1500,7 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
-            <span>{t('overview.add_to_cart')}</span>
+            <span>{t("overview.add_to_cart")}</span>
           </>
         )}
       </button>
