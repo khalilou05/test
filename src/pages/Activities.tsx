@@ -304,11 +304,14 @@ const Activities: React.FC<ActivitiesProps> = ({ mapEditorRef }) => {
         console.log(
           `Dispatching ${newActivities.length} new activities from files...`
         );
+        // Vider les activités existantes avant d'ajouter la nouvelle
+        dispatch(clearActivities());
+        dispatch(clearPoints());
         dispatch(addActivity(newActivities));
         dispatch(initializePoints(newActivities));
-        // Activer automatiquement les nouvelles activités
+        // Activer uniquement la nouvelle activité
         const newIds = newActivities.map((a) => a.id);
-        dispatch(setActiveActivityIds([...activeActivityIds, ...newIds]));
+        dispatch(setActiveActivityIds(newIds));
       }
     } catch (err: any) {
       console.error("Error processing uploaded files:", err);

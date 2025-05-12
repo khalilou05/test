@@ -231,30 +231,31 @@ const DEFAULT_STAT_COLOR = "#333333"; // Kept for logic, Tailwind for styling
 
 // --- BASE STYLES FOR UI ELEMENTS ---
 const baseInputClasses =
-  "block w-[85%] rounded-md border-0 bg-neutral-800/80 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500 text-white placeholder:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed w-full";
+  "block w-full rounded-md border-0 bg-neutral-800/80 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500 text-white placeholder:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed";
 const baseIconButtonClasses =
   "relative inline-flex items-center justify-center p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-700/80 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
 const activeIconButtonClasses = "bg-blue-600 text-white hover:bg-blue-700";
 const baseDropdownButtonClasses =
-  "relative w-[85%] cursor-default rounded-md bg-neutral-800/80 py-1.5 pl-3 pr-10 text-left text-white shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed w-full";
+  "relative w-full cursor-default rounded-md bg-neutral-800/80 py-1.5 pl-3 pr-10 text-left text-white shadow-sm ring-1 ring-inset ring-neutral-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed";
 const baseDropdownOptionsContainerClasses =
-  "absolute z-30 mt-1 left-0 right-0 max-h-56  max-w-full overflow-auto rounded-md bg-neutral-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm";
+  "absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md bg-neutral-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm";
 const baseDropdownOptionClasses = ({ active }: { active: boolean }) =>
   clsx(
-    "relative cursor-default select-none py-2 pl-3 pr-9 w-full",
-    active ? "bg-blue-600 text-white w-full" : "text-neutral-200 w-full"
+    "relative cursor-default select-none py-2 pl-3 pr-9",
+    active ? "bg-blue-600 text-white" : "text-neutral-200"
   );
 const sectionContainerClasses =
-  "space-y-3 rounded-lg border border-neutral-700/50 bg-neutral-800/40 p-4";
+  "space-y-3 rounded-lg border border-neutral-700/50 bg-neutral-800/40 p-2 w-[260px]";
 
-// --- Sortable Item Component (Statistics Row) ---
-const SortableItem = ({
-  id,
-  children,
-}: {
+// --- États pour le collapse des blocs ---
+// (Supprimé ici, voir plus bas dans le composant principal)
+
+// --- SortableItem composant utilitaire pour DnD des stats ---
+type SortableItemProps = {
   id: string;
   children: React.ReactNode;
-}) => {
+};
+const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -483,7 +484,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
         )}
       >
         {/* Ligne 1: Icônes */}
-        <div className="relative flex w-full flex-wrap items-center gap-x-1 gap-y-1">
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
           {/* Visibilité */}
           <button
             onClick={handleVisibilityToggle}
@@ -548,7 +549,10 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
               <FaItalic className="w-4 h-4" />{" "}
             </button>
             {/* Align */}
-            <div className="inline-flex rounded-md shadow-sm">
+            <div
+              style={{ gap: "8px" }}
+              className="inline-flex rounded-md shadow-sm"
+            >
               <button
                 onClick={() => dispatchStyleUpdate({ textAlign: "left" })}
                 disabled={!isVisible}
@@ -596,11 +600,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
         </div>
 
         {/* Ligne 2: Font Weight */}
-        <div
-          className={clsx(
-            !isVisible && "opacity-60 pointer-events-none w-full"
-          )}
-        >
+        <div className={clsx(!isVisible && "opacity-60 pointer-events-none")}>
           <Listbox
             value={style.fontWeight}
             onChange={(value) => dispatchStyleUpdate({ fontWeight: value })}
@@ -608,10 +608,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
           >
             <div className="relative w-full">
               {/* Tooltip sur le bouton */}
-              <ListboxButton
-                style={{ width: "85%" }}
-                className={baseDropdownButtonClasses}
-              >
+              <ListboxButton className={baseDropdownButtonClasses}>
                 {" "}
                 <span className="block truncate text-sm">
                   {currentWeightName}
@@ -654,10 +651,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
           >
             <div className="relative w-full">
               {/* Tooltip sur le bouton */}
-              <ListboxButton
-                style={{ width: "85%" }}
-                className={baseDropdownButtonClasses}
-              >
+              <ListboxButton className={baseDropdownButtonClasses}>
                 {" "}
                 <span className="block truncate text-sm">
                   {AVAILABLE_FONTS.find(
@@ -704,10 +698,7 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
             !isVisible && "opacity-60 pointer-events-none"
           )}
         >
-          <div
-            style={{ width: "85%" }}
-            className="inline-flex items-center rounded-md bg-neutral-800/80 ring-1 ring-inset ring-neutral-700/50 shadow-sm divide-x divide-neutral-700/50"
-          >
+          <div className="inline-flex items-center rounded-md bg-neutral-800/80 ring-1 ring-inset ring-neutral-700/50 shadow-sm divide-x divide-neutral-700/50">
             <Input
               type="number"
               aria-label="Taille de police"
@@ -972,9 +963,9 @@ const StatRowContent = React.memo<StatRowContentProps>(
     const onRemove = () => handleRemoveStat(index);
 
     return (
-      <div className="relative flex flex-col gap-y-2 w-full">
+      <div className="flex flex-col gap-y-2 w-full">
         {/* Row 1: Label & Value Inputs */}
-        <div className="relative flex gap-x-2 w-full">
+        <div className="flex gap-x-2 w-full">
           <div className="flex-1 min-w-[100px]">
             <Input
               placeholder="Libellé"
@@ -985,7 +976,7 @@ const StatRowContent = React.memo<StatRowContentProps>(
               className={clsx(
                 baseInputClasses,
                 "text-xs",
-                "w-[85%]",
+                "w-full",
                 "text-white"
               )}
             />
@@ -1000,7 +991,7 @@ const StatRowContent = React.memo<StatRowContentProps>(
               className={clsx(
                 baseInputClasses,
                 "text-xs",
-                "w-[85%]",
+                "w-full",
                 "text-white"
               )}
             />
@@ -1129,6 +1120,11 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
   );
   // Ajout pour la traduction
   const { t } = useTranslation();
+
+  // Collapse states for each section
+  const [titleCollapsed, setTitleCollapsed] = useState(false);
+  const [descriptionCollapsed, setDescriptionCollapsed] = useState(false);
+  const [statsCollapsed, setStatsCollapsed] = useState(false);
 
   // State: Local copy of stats for editing
   const [localStats, setLocalStats] = useState(() =>
@@ -1370,86 +1366,134 @@ const Labels: React.FC<LabelsProps> = ({ mapEditorRef }) => {
         </p>
       </div>
 
+      {/* Titre Section Collapsible */}
       <Field
         as="div"
         className={sectionContainerClasses}
       >
-        <HeadlessLabel
-          className={"font-sans text-base font-medium text-white pb-3"}
+        <div
+          className="flex items-center justify-between cursor-pointer select-none"
+          onClick={() => setTitleCollapsed((prev) => !prev)}
         >
-          {t("labels.label_title")}
-        </HeadlessLabel>
-        <SimpleEditor
-          identifier="title"
-          content={title.text}
-          isVisible={title.isVisible}
-          style={title.style}
-        />
-      </Field>
-
-      <Field
-        as="div"
-        className={sectionContainerClasses}
-      >
-        <HeadlessLabel
-          className={"font-sans text-base font-medium text-white pb-3"}
-        >
-          {t("labels.label_description")}
-        </HeadlessLabel>
-        <SimpleEditor
-          identifier="description"
-          content={description.text}
-          isVisible={description.isVisible}
-          style={description.style}
-        />
-      </Field>
-
-      <Field
-        as="div"
-        className={sectionContainerClasses}
-      >
-        <HeadlessLabel className={"font-sans text-base font-medium text-white"}>
-          {t("labels.stats")}
-        </HeadlessLabel>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={onDragEnd}
-        >
-          <SortableContext
-            items={localStats.map((_, index) => `stat-${index}`)}
-            strategy={verticalListSortingStrategy}
+          <HeadlessLabel className="font-sans text-base font-medium text-white pb-3 flex-1">
+            {t("labels.label_title")}
+          </HeadlessLabel>
+          <span
+            className="ml-2 transition-transform"
+            style={{
+              transform: titleCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+            }}
           >
-            <div className="space-y-2 mt-3">
-              {localStats.map((localStat, index) => (
-                <SortableItem
-                  key={`stat-${index}`}
-                  id={`stat-${index}`}
-                >
-                  <StatRowContent
-                    stat={localStat}
-                    index={index}
-                    handleLocalLabelChange={handleLocalLabelChange}
-                    handleLocalValueChange={handleLocalValueChange}
-                    handleLocalStyleChange={handleLocalStyleChange}
-                    handleSaveChanges={handleSaveChanges}
-                    handleRemoveStat={handleRemoveStat}
-                    debounceStyleUpdate={debounceStyleUpdate}
-                  />
-                </SortableItem>
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={handleAddStat}
-            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <FaPlus className="w-4 h-4" />
-            {t("labels.add_stat")}
-          </button>
+            <ChevronDownIcon className="h-5 w-5 text-neutral-400" />
+          </span>
         </div>
+        {!titleCollapsed && (
+          <SimpleEditor
+            identifier="title"
+            content={title.text}
+            isVisible={title.isVisible}
+            style={title.style}
+          />
+        )}
+      </Field>
+
+      {/* Description Section Collapsible */}
+      <Field
+        as="div"
+        className={sectionContainerClasses}
+      >
+        <div
+          className="flex items-center justify-between cursor-pointer select-none"
+          onClick={() => setDescriptionCollapsed((prev) => !prev)}
+        >
+          <HeadlessLabel className="font-sans text-base font-medium text-white pb-3 flex-1">
+            {t("labels.label_description")}
+          </HeadlessLabel>
+          <span
+            className="ml-2 transition-transform"
+            style={{
+              transform: descriptionCollapsed
+                ? "rotate(-90deg)"
+                : "rotate(0deg)",
+            }}
+          >
+            <ChevronDownIcon className="h-5 w-5 text-neutral-400" />
+          </span>
+        </div>
+        {!descriptionCollapsed && (
+          <SimpleEditor
+            identifier="description"
+            content={description.text}
+            isVisible={description.isVisible}
+            style={description.style}
+          />
+        )}
+      </Field>
+
+      {/* Statistiques Section Collapsible */}
+      <Field
+        as="div"
+        className={sectionContainerClasses}
+      >
+        <div
+          className="flex items-center justify-between cursor-pointer select-none"
+          onClick={() => setStatsCollapsed((prev) => !prev)}
+        >
+          <HeadlessLabel className="font-sans text-base font-medium text-white flex-1">
+            {t("labels.stats")}
+          </HeadlessLabel>
+          <span
+            className="ml-2 transition-transform"
+            style={{
+              transform: statsCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+            }}
+          >
+            <ChevronDownIcon className="h-5 w-5 text-neutral-400" />
+          </span>
+        </div>
+        {!statsCollapsed && (
+          <>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
+            >
+              <SortableContext
+                items={localStats.map((_, index) => `stat-${index}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2 mt-3">
+                  {localStats.map((localStat, index) => (
+                    <SortableItem
+                      key={`stat-${index}`}
+                      id={`stat-${index}`}
+                    >
+                      <StatRowContent
+                        stat={localStat}
+                        index={index}
+                        handleLocalLabelChange={handleLocalLabelChange}
+                        handleLocalValueChange={handleLocalValueChange}
+                        handleLocalStyleChange={handleLocalStyleChange}
+                        handleSaveChanges={handleSaveChanges}
+                        handleRemoveStat={handleRemoveStat}
+                        debounceStyleUpdate={debounceStyleUpdate}
+                      />
+                    </SortableItem>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleAddStat}
+                className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <FaPlus className="w-4 h-4" />
+                {t("labels.add_stat")}
+              </button>
+            </div>
+          </>
+        )}
       </Field>
 
       {/* Bouton Ajouter au panier en bas, style identique à Overview */}
