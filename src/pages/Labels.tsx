@@ -550,7 +550,9 @@ const SimpleEditor: React.FC<SimpleEditorProps> = ({
             </button>
             {/* Align */}
             <div
-              style={{ gap: "8px" }}
+              style={{
+                gap: "8px",
+              }}
               className="inline-flex rounded-md shadow-sm"
             >
               <button
